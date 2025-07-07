@@ -1,4 +1,3 @@
-# ahoum-booking-system/app/routes/auth.py
 from flask import Blueprint, request, jsonify
 from ..models.user import User
 from ..extensions import db

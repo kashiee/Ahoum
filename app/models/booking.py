@@ -1,4 +1,3 @@
-# ahoum-booking-system/app/models/booking.py
 from ..extensions import db
 
 class Booking(db.Model):

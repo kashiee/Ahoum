@@ -8,16 +8,17 @@ A lightweight Flask-based backend for booking sessions and retreats, developed a
 
 - 🔐 User authentication with JWT (Sign up & Log in securely)  
 - 🌿 Explore a curated list of events and retreats  
-- 🛡 Book events — available only to logged-in users  
+- 🛡️ Book events — available only to logged-in users  
 - 📆 Access your personal booking history (upcoming & past)  
-- 🔔 Instantly notify the facilitator's CRM on each new booking via webhook
-
+- 🔔 Instantly notify the facilitator's CRM on each new booking via webhook  
+- 🧮 Filter events by type and minimum rating  
+- ✍️ Add, update, or manage events via secure endpoints  
 
 ---
 
 ## 📁 Project Structure
 
-
+```
 /ahoum-booking-system
 ├── app/
 │   ├── models/          # SQLAlchemy models
@@ -30,83 +31,122 @@ A lightweight Flask-based backend for booking sessions and retreats, developed a
 ├── seed.py              # DB seeder script
 ├── requirements.txt     # Dependencies
 └── README.md            # Project info
-
-
+```
 
 ---
 
 ## 🔐 Authentication (JWT)
 
 ### Register
-POST /auth/register
-json
+`POST /auth/register`
+```json
 {
   "name": "Test User",
   "email": "1@example.com",
   "password": "password123"
 }
-
+```
 
 ### Login
-POST /auth/login
-json
+`POST /auth/login`
+```json
 {
   "email": "1@example.com",
   "password": "password123"
 }
+```
 
-Response:
-json
+_Response:_
+```json
 { "access_token": "<JWT>" }
-
+```
 
 ---
 
 ## 📅 Event APIs
 
-### Get All Events
-GET /events/
+### 🔎 Get All Events
+`GET /events/`
+
+### 🔍 Filter Events by Type and Rating
+`GET /events/filter?type=Yoga&rating=4.5`
+
+### 🆕 Add a New Event (JWT required)
+`POST /events/`
+```json
+{
+  "title": "Yoga Retreat",
+  "description": "A peaceful yoga session",
+  "datetime": "2025-08-01T10:00:00",
+  "facilitator_id": "FAC001",
+  "type": "Yoga",
+  "rating": 4.9
+}
+```
+
+### ✏️ Update an Event (JWT required)
+`PUT /events/<event_id>`
+
+```json
+{
+  "title": "Updated Title",
+  "rating": 4.7
+}
+```
 
 ---
 
 ## 📝 Booking APIs
 
-### Book an Event
-POST /bookings/
-Headers: Authorization: Bearer <token>
-json
+### Book an Event (JWT required)
+`POST /bookings/`
+```json
 { "event_id": 1 }
+```
 
-
-### View My Bookings
-GET /bookings/
-Headers: Authorization: Bearer <token>
+### View My Bookings (JWT required)
+`GET /bookings/`
 
 ---
 
 ## 🔔 CRM Notification
 
 When a booking is made, a POST request is sent to:
-
+```
 POST https://example.com/crm-webhook
-
-With body:
-json
+```
+Payload:
+```json
 {
   "booking_id": 1,
   "user": { "name": "Alice", "email": "alice@example.com" },
   "event_id": 2,
   "facilitator_id": "FAC001"
 }
+```
 
+---
+
+## 🧪 Quick Test (curl)
+```bash
+curl -X POST http://127.0.0.1:5000/auth/login   -H "Content-Type: application/json"   -d '{"email": "test@example.com", "password": "password123"}'
+```
+
+# 📦 Stripe Integration Guide
+
+To integrate Stripe payments into your Ahoum Booking System, please refer to the full roadmap and implementation guide in the following file:
+
+👉 [stripe_payment_roadmap.md](stripe_payment_roadmap.md)
 
 ---
 
-## 🧪 Testing with curl
-bash
-curl -X POST http://127.0.0.1:5000/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email": "test@example.com", "password": "password123"}'
+This document includes:
+- Stripe library installation
+- Setting environment variables
+- Creating checkout sessions
+- Handling webhooks
+- Updating your booking model with payment status
+
+Ensure you have your Stripe test keys ready and follow the steps to connect payments seamlessly.
 
 
----
