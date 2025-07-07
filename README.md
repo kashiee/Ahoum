@@ -94,6 +94,47 @@ _Response:_
 }
 ```
 
+### 🔍 Get Event by ID  
+`GET /events/<event_id>`  
+Retrieve full details of a specific event using its ID.
+
+📥 **Example:**
+```http
+GET /events/2
+```
+
+📤 **Response:**
+```json
+{
+  "id": 2,
+  "title": "Mindfulness Session",
+  "description": "An hour of guided mindfulness.",
+  "datetime": "2025-08-02T17:30:00",
+  "facilitator_id": "FAC002",
+  "type": "Meditation",
+  "rating": 4.5
+}
+```
+
+---
+
+### 🗑️ Delete an Event (JWT required)  
+`DELETE /events/<event_id>`  
+Removes an event from the system.
+
+📥 **Example:**
+```http
+DELETE /events/3
+Authorization: Bearer <your_token>
+```
+
+📤 **Response:**
+```json
+{
+  "msg": "Event deleted successfully"
+}
+```
+
 ---
 
 ## 📝 Booking APIs
