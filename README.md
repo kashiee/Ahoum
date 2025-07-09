@@ -152,10 +152,13 @@ curl -X POST http://localhost:5000/auth/login \
 
 ---
 
-## 📦 Stripe Integration
 
-Refer to `stripe_payment_roadmap.md` (not included here) for guidance on adding Stripe payments and refunds.
+## 📦 Stripe Integration Guide
+
+To integrate Stripe payments into your Ahoum Booking System, please refer to the full roadmap and implementation guide in the following file:
+
+👉 [stripe_payment_roadmap.md](stripe_payment_roadmap.md)
 
 ---
 
-Made with 💻 and ☕ for the Ahoum Backend Internship.
+
