@@ -1,58 +1,35 @@
+
 # Ahoum Booking System
 
-A lightweight Flask-based backend for booking sessions and retreats, developed as part of the Ahoum Backend Developer Internship assignment.
+A complete Flask-based backend for booking sessions and retreats, created for the Ahoum Backend Developer Internship assignment. It features JWT and Google OAuth authentication, event management, booking system, CRM integration, and secure facilitator controls.
 
 ---
 
-## 🚀 Features
+## 🚀 Features Overview
 
-- 🔐 User authentication with JWT (Sign up & Log in securely)  
-- 🌿 Explore a curated list of events and retreats  
-- 🛡️ Book events — available only to logged-in users  
-- 📆 Access your personal booking history (upcoming & past)  
-- 🔔 Instantly notify the facilitator's CRM on each new booking via webhook  
-- 🧮 Filter events by type and minimum rating  
-- ✍️ Add, update, or manage events via secure endpoints  
-
----
-
-## 📁 Project Structure
-
-```
-/ahoum-booking-system
-├── app/
-│   ├── models/          # SQLAlchemy models
-│   ├── routes/          # API route blueprints
-│   ├── services/        # CRM integration
-│   ├── extensions.py    # JWT and DB init
-│   └── __init__.py      # App factory
-├── config.py            # App config
-├── run.py               # Entry point
-├── seed.py              # DB seeder script
-├── requirements.txt     # Dependencies
-└── README.md            # Project info
-```
+- 🔐 **JWT Authentication** – Secure login system for users.
+- 🌐 **Google OAuth 2.0** – Seamless social login via Google.
+- 📅 **Event Management** – View, filter, create, update events.
+- 📖 **Booking System** – Authenticated users can book events.
+- 🧑‍🏫 **Facilitator Features** – Manage event bookings and cancellations.
+- 🔔 **CRM Notification System** – Sends booking data to an external CRM webhook securely.
+- 🛡️ **Security Focused** – Bearer token protection, role-based access, and secure communication.
+- 📦 **Deployment-Ready** – Configured for deployment on Render/Heroku.
+- 📪 **Webhook Listener App** – A secondary Flask app receives booking updates.
+- 🧪 **Postman Compatible** – Can be tested easily via Postman (optional collection).
 
 ---
 
-## 🔐 Authentication (JWT)
+## 🔐 Authentication
 
-### Register
-`POST /auth/register`
+### JWT Login
+Users can log in via email and receive a JWT token.
+
+**`POST /auth/login`**
 ```json
 {
-  "name": "Test User",
-  "email": "1@example.com",
-  "password": "password123"
-}
-```
-
-### Login
-`POST /auth/login`
-```json
-{
-  "email": "1@example.com",
-  "password": "password123"
+  "email": "user@example.com",
+  "password": "securepassword"
 }
 ```
 
@@ -61,133 +38,124 @@ _Response:_
 { "access_token": "<JWT>" }
 ```
 
----
+### Google OAuth Login
+Google login is available via Flask-Dance.
 
-## 📅 Event APIs
+**Flow:**
+1. `GET /auth/google/login` – Redirects to Google for authentication.
+2. `GET /auth/google/callback` – Handles the Google response.
+3. A new user is created if they don’t already exist.
+4. A JWT token is returned in the response.
 
-### 🔎 Get All Events
-`GET /events/`
-
-### 🔍 Filter Events by Type and Rating
-`GET /events/filter?type=Yoga&rating=4.5`
-
-### 🆕 Add a New Event (JWT required)
-`POST /events/`
-```json
-{
-  "title": "Yoga Retreat",
-  "description": "A peaceful yoga session",
-  "datetime": "2025-08-01T10:00:00",
-  "facilitator_id": "FAC001",
-  "type": "Yoga",
-  "rating": 4.9
-}
-```
-
-### ✏️ Update an Event (JWT required)
-`PUT /events/<event_id>`
-
-```json
-{
-  "title": "Updated Title",
-  "rating": 4.7
-}
-```
-
-### 🔍 Get Event by ID  
-`GET /events/<event_id>`  
-Retrieve full details of a specific event using its ID.
-
-📥 **Example:**
-```http
-GET /events/2
-```
-
-📤 **Response:**
-```json
-{
-  "id": 2,
-  "title": "Mindfulness Session",
-  "description": "An hour of guided mindfulness.",
-  "datetime": "2025-08-02T17:30:00",
-  "facilitator_id": "FAC002",
-  "type": "Meditation",
-  "rating": 4.5
-}
-```
+**How It Works Internally:**
+- Google user info is fetched using Google OAuth access token.
+- The backend checks if the email exists in the DB.
+- If not found, it creates a user and issues a JWT.
 
 ---
 
-### 🗑️ Delete an Event (JWT required)  
-`DELETE /events/<event_id>`  
-Removes an event from the system.
+## 🔔 CRM Webhook Integration
 
-📥 **Example:**
-```http
-DELETE /events/3
-Authorization: Bearer <your_token>
-```
+The CRM system is a separate Flask application that listens on:
 
-📤 **Response:**
+**`POST /webhook`**
+
+This endpoint is protected using a static Bearer token passed in the `Authorization` header.
+
+**Payload Example:**
 ```json
 {
-  "msg": "Event deleted successfully"
-}
-```
-
----
-
-## 📝 Booking APIs
-
-### Book an Event (JWT required)
-`POST /bookings/`
-```json
-{ "event_id": 1 }
-```
-
-### View My Bookings (JWT required)
-`GET /bookings/`
-
----
-
-## 🔔 CRM Notification
-
-When a booking is made, a POST request is sent to:
-```
-POST https://example.com/crm-webhook
-```
-Payload:
-```json
-{
-  "booking_id": 1,
+  "booking_id": 15,
   "user": { "name": "Alice", "email": "alice@example.com" },
-  "event_id": 2,
-  "facilitator_id": "FAC001"
+  "event": 7,
+  "facilitator_id": 3
 }
 ```
 
+**Security:** If the token is invalid or a field is missing, the webhook responds with `403 Unauthorized` or `400 Bad Request`. This ensures only valid requests are processed by the CRM.
+
 ---
 
-## 🧪 Quick Test (curl)
-```bash
-curl -X POST http://127.0.0.1:5000/auth/login   -H "Content-Type: application/json"   -d '{"email": "test@example.com", "password": "password123"}'
+## 📚 Full API Reference
+
+### 🔐 Authentication
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/auth/login` | Login with email/password |
+| GET | `/auth/google/login` | Redirect to Google login |
+| GET | `/auth/google/callback` | Handle Google OAuth response |
+
+---
+
+### 📅 Events
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/events` | Get all events |
+| GET | `/events/filter?type=Yoga&rating=4.5` | Filter by type & rating |
+| POST | `/book/<event_id>` | Book an event (JWT) |
+
+---
+
+### 📖 Bookings
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/bookings/` | View logged-in user's bookings |
+| POST | `/book/<event_id>` | Book a specific event |
+
+---
+
+### 🧑‍🏫 Facilitator Endpoints
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/facilitator/registrations/<event_id>` | View users for your session |
+| POST | `/facilitator/cancel/<event_id>` | Cancel event and mark all bookings as refunded |
+
+---
+
+### 🔔 CRM Webhook (Separate Flask App)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/webhook` | Receive booking notification from main app |
+
+---
+
+## ⚙️ Environment Variables
+
+`.env.example`:
+```
+SECRET_KEY=supersecretkey
+JWT_SECRET_KEY=jwtsecretkey
+DATABASE_URL=sqlite:///data.db
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+CRM_WEBHOOK_SECRET=crmsecrettoken
 ```
 
-# 📦 Stripe Integration Guide
+---
 
-To integrate Stripe payments into your Ahoum Booking System, please refer to the full roadmap and implementation guide in the following file:
+## 🛠️ Deployment
 
-👉 [stripe_payment_roadmap.md](stripe_payment_roadmap.md)
+1. Add `Procfile`: `web: gunicorn run:app`
+2. Push to Heroku or Render
+3. Set environment variables in dashboard
+4. The webhook app can be deployed separately
 
 ---
 
-This document includes:
-- Stripe library installation
-- Setting environment variables
-- Creating checkout sessions
-- Handling webhooks
-- Updating your booking model with payment status
+## 🧪 Test JWT Auth
 
-Ensure you have your Stripe test keys ready and follow the steps to connect payments seamlessly.
+```bash
+curl -X POST http://localhost:5000/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email": "test@example.com", "password": "password123"}'
+```
 
+---
 
+## 📦 Stripe Integration
+
+Refer to `stripe_payment_roadmap.md` (not included here) for guidance on adding Stripe payments and refunds.
+
+---
+
+Made with 💻 and ☕ for the Ahoum Backend Internship.

@@ -1,24 +1,30 @@
-from flask import Blueprint, request, jsonify
-from ..models.user import User
-from ..extensions import db
-from flask_jwt_extended import create_access_token
+from flask import Blueprint, request, jsonify, redirect, url_for
+from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
+from flask_dance.contrib.google import make_google_blueprint, google
+from app.models import User, db
+import os
 
-bp = Blueprint('auth', __name__, url_prefix='/auth')
+auth = Blueprint('auth', __name__)
 
-@bp.route('/register', methods=['POST'])
-def register():
-    data = request.get_json()
-    user = User(name=data['name'], email=data['email'])
-    user.set_password(data['password'])
-    db.session.add(user)
-    db.session.commit()
-    return jsonify({"msg": "Registered successfully"}), 201
+google_bp = make_google_blueprint(
+    client_id=os.getenv("GOOGLE_CLIENT_ID"),
+    client_secret=os.getenv("GOOGLE_CLIENT_SECRET"),
+    redirect_to="auth.google_callback"
+)
 
-@bp.route('/login', methods=['POST'])
-def login():
-    data = request.get_json()
-    user = User.query.filter_by(email=data['email']).first()
-    if user and user.check_password(data['password']):
-        token = create_access_token(identity=str(user.id))
-        return jsonify(access_token=token)
-    return jsonify({"msg": "Bad credentials"}), 401
+@auth.route("/google/login")
+def google_login():
+    return redirect(url_for("google.login"))
+
+@auth.route("/google/callback")
+def google_callback():
+    resp = google.get("/oauth2/v1/userinfo")
+    info = resp.json()
+    email = info["email"]
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        user = User(email=email, name=info["name"])
+        db.session.add(user)
+        db.session.commit()
+    token = create_access_token(identity={"id": user.id, "role": user.role})
+    return jsonify(access_token=token)

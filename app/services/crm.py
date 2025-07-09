@@ -1,16 +1,18 @@
-# ahoum-booking-system/app/services/crm.py
-import requests
+from flask import Blueprint, request, jsonify
+import os
 
-def notify_crm(booking_id, user, event):
-    payload = {
-        "booking_id": booking_id,
-        "user": {
-            "name": user.name,
-            "email": user.email
-        },
-        "event_id": event.id,
-        "facilitator_id": event.facilitator_id
-    }
-    # Replace with real CRM URL or mock endpoint
-    # response = requests.post("https://example.com/crm-webhook", json=payload)
-    # return response.status_code
+webhook_bp = Blueprint("webhook", __name__)
+
+@webhook_bp.route("/webhook", methods=["POST"])
+def receive_booking():
+    token = request.headers.get("Authorization", "").replace("Bearer ", "")
+    if token != os.getenv("CRM_WEBHOOK_SECRET"):
+        return jsonify({"msg": "Unauthorized"}), 403
+
+    data = request.get_json()
+    required = ["booking_id", "user", "event", "facilitator_id"]
+    if not all(field in data for field in required):
+        return jsonify({"msg": "Missing fields"}), 400
+
+    print("CRM received booking:", data)
+    return jsonify({"msg": "Received"}), 200
