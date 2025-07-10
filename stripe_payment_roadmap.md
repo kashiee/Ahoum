@@ -44,7 +44,7 @@ Add a route like `/create-checkout-session`:
 ```python
 import stripe
 from flask import Blueprint, request, jsonify
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required
 from config import Config
 
 stripe.api_key = Config.STRIPE_SECRET_KEY
@@ -55,24 +55,36 @@ checkout_bp = Blueprint('checkout', __name__, url_prefix='/payments')
 @jwt_required()
 def create_checkout():
     data = request.get_json()
-    event_id = data['event_id']
-    # Normally you'd fetch event details from DB
+
+    event_id = data.get('event_id')
+    user_id = data.get('user_id')
+    facilitator_id = data.get('facilitator_id')
+
+    if not all([event_id, user_id, facilitator_id]):
+        return jsonify({"msg": "Missing required fields"}), 400
+
     session = stripe.checkout.Session.create(
         payment_method_types=['card'],
         mode='payment',
         line_items=[{
             'price_data': {
                 'currency': 'usd',
-                'product_data': {'name': 'Retreat Booking'},
+                'product_data': {'name': f'Event #{event_id} Booking'},
                 'unit_amount': 2000  # price in cents
             },
             'quantity': 1,
         }],
+        metadata={
+            'event_id': str(event_id),
+            'user_id': str(user_id),
+            'facilitator_id': str(facilitator_id)
+        },
         success_url='https://yourdomain.com/success',
         cancel_url='https://yourdomain.com/cancel',
     )
-    return jsonify({'checkout_url': session.url})
-```
+
+    return jsonify({'checkout_url': session.url}), 200
+
 
 ---
 
